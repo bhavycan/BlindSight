@@ -2,14 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { App as CapApp } from "@capacitor/app";
 
 import { DetectionProvider, useDetection } from "./engine/DetectionProvider";
-import { maxLevel } from "./engine/severity";
 import { useStoredState } from "./engine/storage";
-import { useSensors } from "./hardware/sensorClient";
 import { DEFAULT_VOICE_SETTINGS, useVoice } from "./voice/useVoice";
 import { Icons } from "./components/ui";
 import LiveVision from "./screens/LiveVision";
 import Obstacles from "./screens/Obstacles";
-import Sensors from "./screens/Sensors";
 import Voice from "./screens/Voice";
 
 const TABS = [
