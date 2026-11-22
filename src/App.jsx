@@ -1,6 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { App as CapApp } from "@capacitor/app";
-
+import { useCallback, useEffect, useRef, useState } from "react";
 import { DetectionProvider, useDetection } from "./engine/DetectionProvider";
 import { useStoredState } from "./engine/storage";
 import { DEFAULT_VOICE_SETTINGS, useVoice } from "./voice/useVoice";
@@ -12,7 +10,6 @@ import Voice from "./screens/Voice";
 const TABS = [
   { id: "live", label: "Live Vision", icon: Icons.live },
   { id: "obstacles", label: "Obstacles", icon: Icons.obstacle },
-  { id: "sensors", label: "Sensors", icon: Icons.sensors },
   { id: "voice", label: "Voice", icon: Icons.voice },
 ];
 
@@ -20,20 +17,14 @@ const TABS = [
 const DEFAULT_CAMERA = { mode: "phone", url: "" }; // "phone" = testing source
 const DEFAULT_SENSOR = { url: "" };
 
-function Shell({ camera, setCamera, sensorEndpoint, setSensorEndpoint }) {
+function Shell({ camera, setCamera }) {
   const { analysis } = useDetection();
-  const sensors = useSensors(sensorEndpoint.url);
   const [voiceSettings, setVoiceSettings] = useStoredState("drishti.voice", DEFAULT_VOICE_SETTINGS);
   const [tab, setTab] = useState("live");
 
   // Merge: the wearable's own alert (if it sends one) can only RAISE the level,
   // so there is a single decision, not two competing systems.
-  const { overall, overallSource } = useMemo(() => {
-    const device = sensors.link === "connected" ? sensors.data?.alert : null;
-    if (!analysis.active || !device) return { overall: analysis.overall, overallSource: "camera" };
-    const merged = maxLevel(analysis.overall, device);
-    return { overall: merged, overallSource: merged === analysis.overall ? "camera" : "device" };
-  }, [analysis, sensors.link, sensors.data]);
+  const overall = analysis.overall;
 
   const voice = useVoice(analysis, voiceSettings);
 
@@ -50,12 +41,14 @@ function Shell({ camera, setCamera, sensorEndpoint, setSensorEndpoint }) {
   }, []);
 
   // Move focus to the new screen's title so TalkBack reads it.
-  const headings = { live: useRef(null), obstacles: useRef(null), sensors: useRef(null), voice: useRef(null) };
-  const first = useRef(true);
-  useEffect(() => {
-    if (first.current) { first.current = false; return; }
-    headings[tab].current?.focus();
-  }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
+// Move focus to the new screen's title so TalkBack reads it.
+const headings = { live: useRef(null), obstacles: useRef(null), voice: useRef(null) };
+const first = useRef(true);
+
+useEffect(() => {
+  if (first.current) { first.current = false; return; }
+  headings[tab].current?.focus();
+}, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onKey = useCallback((e) => {
     const i = TABS.findIndex((t) => t.id === tab);
@@ -72,16 +65,13 @@ function Shell({ camera, setCamera, sensorEndpoint, setSensorEndpoint }) {
           <LiveVision source={camera} setSource={setCamera} headingRef={headings.live} />
         </div>
         <div className="screen" hidden={tab !== "obstacles"} role="tabpanel" id="p-obstacles" aria-labelledby="t-obstacles">
-          <Obstacles analysis={analysis} overall={overall} overallSource={overallSource}
-                     voiceOn={voiceSettings.enabled && !voiceSettings.wearableAudio} headingRef={headings.obstacles} />
-        </div>
-        <div className="screen" hidden={tab !== "sensors"} role="tabpanel" id="p-sensors" aria-labelledby="t-sensors">
-          <Sensors sensors={sensors} endpoint={sensorEndpoint} setEndpoint={setSensorEndpoint} headingRef={headings.sensors} />
+         <Obstacles analysis={analysis} overall={overall}
+           voiceOn={voiceSettings.enabled} headingRef={headings.obstacles} />
         </div>
         <div className="screen" hidden={tab !== "voice"} role="tabpanel" id="p-voice" aria-labelledby="t-voice">
           <Voice settings={voiceSettings} setSettings={setVoiceSettings} voice={voice} headingRef={headings.voice} />
         </div>
-      </main>
+      </main>=
 
       <nav className="tabs" role="tablist" aria-label="Drishti sections" onKeyDown={onKey}>
         {TABS.map((t) => (
